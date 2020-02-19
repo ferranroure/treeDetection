@@ -1,4 +1,4 @@
-# This method takes the point coordinates of each tree top given by crownSegementerEvaluator and extracts 
+# This method takes the point coordinates of each tree top given by crownSegementerEvaluator and extracts
 # a squared patch arround each one. Then, uses the classified masks of the mosaics to know in which species belongs.
 # Then stores each small labeled patch in a folder.
 
@@ -6,7 +6,59 @@ import sys
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from imagePatcherAnnotator import interpretParameters
+
+def interpretParameters(paramFile,verbose=False):
+    # read the parameter file line by line
+    f = open(paramFile, "r")
+    patchSize=-1
+    layerNameList=[]
+    layerList=[]
+    mosaicDict={}
+
+    for x in f:
+        lineList=x.split(" ")
+        # read every line
+        first=lineList[0]
+
+        if first[0]=="#": #if the first character is # treat as a comment
+            if verbose:print("COMMENT: "+str(lineList))
+        elif first=="\n":# account for blank lines, do nothing
+            pass
+        elif first=="patchSize":
+            patchSize=int(lineList[1].strip())
+            if verbose:print("Read Patch Size : "+str(patchSize))
+        elif first=="csvFileName":
+            csvFileN=lineList[1].strip()
+            if verbose:print("Read csv file name : "+csvFileN)
+        elif first=="mosaic":
+            # read the number of layers and set up reading loop
+            filePath=lineList[1]
+            mosaic=lineList[2]
+            numClasses=int(lineList[3])
+            outputFolder=lineList[4+numClasses*2].strip()
+            for i in range(4,numClasses*2+3,2):
+                layerNameList.append(lineList[i])
+                layerList.append(filePath+lineList[i+1])
+
+            #make dictionary entry for this mosaic
+            mosaicDict[mosaic]=mosaicInfo(filePath,mosaic,numClasses,layerNameList,layerList,outputFolder)
+            if verbose:
+                print("\n\n\n")
+                print(mosaicDict[mosaic])
+                print("\n\n\n")
+                #print("Read layers and file : ")
+                #print("filePath "+filePath)
+                #print("mosaic "+mosaic)
+                #print("num Classes "+str(numClasses))
+                #print("layerName List "+str(layerNameList))
+                #print("layer List "+str(layerList))
+                #print("outputFolder "+outputFolder)
+        else:
+            raise Exception("ImagePatchAnnotator:interpretParameters, reading parameters, received wrong parameter "+str(lineList))
+
+        if verbose:(print(mosaicDict))
+
+    return patchSize,csvFileN,mosaicDict
 
 
 def borderPoint(image,point):
@@ -49,12 +101,12 @@ def getSquare(w_size, p, img):
 	height, width, channels = img.shape
 
 	isInside = (int(p[0])-w_size//2) >= 0 and (int(p[0])+w_size//2) < width and (int(p[1])-w_size//2) >= 0 and (int(p[1])+w_size//2) < height
-	
+
 	assert isInside, "The required window is out of bounds of the input image"
 
 	return img[int(p[0])-w_size//2:int(p[0])+w_size//2, int(p[1])-w_size//2:int(p[1])+w_size//2]
 
-		
+
 def main(argv):
 
 	try:
@@ -73,20 +125,20 @@ def main(argv):
 			try:
 				# opencv works with inverted coords, so we have to invert ours.
 				square = getSquare(100, (cent[1],cent[0]), mosaic)
-			
-				cv2.imwrite(output_path+"patch"+str(i)+".jpg", square) 
+
+				cv2.imwrite(output_path+"patch"+str(i)+".jpg", square)
 				i=i+1
-			
+
 			except AssertionError as error:
 				print(error)
-			
+
 
 	except AssertionError as error:
 
 		print(error)
-		
+
 
 # Exectuion example -> python treeDetection.py <path_to_top_mosaic> <path_to_mosaic> <output_folder>
 
 if __name__ == "__main__":
-    main(sys.argv)	
+    main(sys.argv)

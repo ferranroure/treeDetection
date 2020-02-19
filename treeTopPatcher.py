@@ -6,93 +6,97 @@ import sys
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import namedtuple
+
+mosaicInfo = namedtuple("mosaicInfo","path mosaicFile mosaicTopsFile numClasses layerNameList layerFileList outputFolder " )
 
 def interpretParameters(paramFile,verbose=False):
-    # read the parameter file line by line
-    f = open(paramFile, "r")
-    patchSize=-1
-    layerNameList=[]
-    layerList=[]
-    mosaicDict={}
+	# read the parameter file line by line
+	f = open(paramFile, "r")
+	patchSize=-1
+	layerNameList=[]
+	layerFileList=[]
+	mosaicDict={}
 
-    for x in f:
-        lineList=x.split(" ")
-        # read every line
-        first=lineList[0]
+	for x in f:
+		lineList=x.split(" ")
+		# read every line
+		first=lineList[0]
 
-        if first[0]=="#": #if the first character is # treat as a comment
-            if verbose:print("COMMENT: "+str(lineList))
-        elif first=="\n":# account for blank lines, do nothing
-            pass
-        elif first=="patchSize":
-            patchSize=int(lineList[1].strip())
-            if verbose:print("Read Patch Size : "+str(patchSize))
-        elif first=="csvFileName":
-            csvFileN=lineList[1].strip()
-            if verbose:print("Read csv file name : "+csvFileN)
-        elif first=="mosaic":
-            # read the number of layers and set up reading loop
-            filePath=lineList[1]
-            mosaic=lineList[2]
-            numClasses=int(lineList[3])
-            outputFolder=lineList[4+numClasses*2].strip()
-            for i in range(4,numClasses*2+3,2):
-                layerNameList.append(lineList[i])
-                layerList.append(filePath+lineList[i+1])
+		if first[0]=="#": #if the first character is # treat as a comment
+			if verbose:print("COMMENT: "+str(lineList))
+		elif first=="\n":# account for blank lines, do nothing
+			pass
+		elif first=="patchSize":
+			patchSize=int(lineList[1].strip())
+			if verbose:print("Read Patch Size : "+str(patchSize))
+		elif first=="csvFileName":
+			csvFileN=lineList[1].strip()
+			if verbose:print("Read csv file name : "+csvFileN)
+		elif first=="mosaic":
+			# read the number of layers and set up reading loop
+			filePath=lineList[1]
+			mosaic=lineList[2]
+			mosaicTops = lineList[3]
+			numClasses=int(lineList[4])
+			outputFolder=lineList[5+numClasses*2].strip()
+			for i in range(5,numClasses*2+4,2):
+				layerNameList.append(lineList[i])
+				layerFileList.append(filePath+lineList[i+1])
 
-            #make dictionary entry for this mosaic
-            mosaicDict[mosaic]=mosaicInfo(filePath,mosaic,numClasses,layerNameList,layerList,outputFolder)
-            if verbose:
-                print("\n\n\n")
-                print(mosaicDict[mosaic])
-                print("\n\n\n")
-                #print("Read layers and file : ")
-                #print("filePath "+filePath)
-                #print("mosaic "+mosaic)
-                #print("num Classes "+str(numClasses))
-                #print("layerName List "+str(layerNameList))
-                #print("layer List "+str(layerList))
-                #print("outputFolder "+outputFolder)
-        else:
-            raise Exception("ImagePatchAnnotator:interpretParameters, reading parameters, received wrong parameter "+str(lineList))
+			#make dictionary entry for this mosaic
+			mosaicDict[mosaic]=mosaicInfo(filePath,mosaic,mosaicTops,numClasses,layerNameList,layerFileList,outputFolder)
+			if verbose:
+				print("\n\n\n")
+				print(mosaicDict[mosaic])
+				print("\n\n\n")
+				#print("Read layers and file : ")
+				#print("filePath "+filePath)
+				#print("mosaic "+mosaic)
+				#print("num Classes "+str(numClasses))
+				#print("layerName List "+str(layerNameList))
+				#print("layer List "+str(layerList))
+				#print("outputFolder "+outputFolder)
+		else:
+			raise Exception("ImagePatchAnnotator:interpretParameters, reading parameters, received wrong parameter "+str(lineList))
 
-        if verbose:(print(mosaicDict))
+		if verbose:(print(mosaicDict))
 
-    return patchSize,csvFileN,mosaicDict
+	return patchSize,csvFileN,mosaicDict
 
 
 def borderPoint(image,point):
-    margin=100
-    top1=image.shape[0]
-    top2=image.shape[1]
+	margin=100
+	top1=image.shape[0]
+	top2=image.shape[1]
 
-    return point[0]<margin or (top1-point[0])<margin or point[1]<margin or (top2-point[1])<margin
+	return point[0]<margin or (top1-point[0])<margin or point[1]<margin or (top2-point[1])<margin
 
 # Function to take a binary image and output the center of masses of its connected regions
 # THIS METHOD IS A COPY OF crownSectmenterEvaluator method! must be deleted!!!
 def listFromBinary(fileName):
-    #open filename
-    im=cv2.imread(fileName,cv2.IMREAD_GRAYSCALE)
-    if im is None: return []
-    else:
-        mask = cv2.threshold(255-im, 40, 255, cv2.THRESH_BINARY)[1]
+	#open filename
+	im=cv2.imread(fileName,cv2.IMREAD_GRAYSCALE)
+	if im is None: return []
+	else:
+		mask = cv2.threshold(255-im, 40, 255, cv2.THRESH_BINARY)[1]
 
-        #compute connected components
-        numLabels, labelImage,stats, centroids = cv2.connectedComponentsWithStats(mask)
-        #print("crownSegmenterEvaluator, found "+str(numLabels)+" "+str(len(centroids))+" points for file "+fileName)
+		#compute connected components
+		numLabels, labelImage,stats, centroids = cv2.connectedComponentsWithStats(mask)
+		#print("crownSegmenterEvaluator, found "+str(numLabels)+" "+str(len(centroids))+" points for file "+fileName)
 
-        #im2 = 255 * np. ones(shape=[im.shape[0], im.shape[1], 1], dtype=np. uint8)
+		#im2 = 255 * np. ones(shape=[im.shape[0], im.shape[1], 1], dtype=np. uint8)
 
-        #print(" listFromBinary, found  "+str(len(centroids)))
-        #print(centroids)
+		#print(" listFromBinary, found  "+str(len(centroids)))
+		#print(centroids)
 
-        newCentroids=[]
-        for c in centroids:
-            if not borderPoint(im,c):newCentroids.append(c)
-        #print(" listFromBinary, refined  "+str(len(newCentroids)))
-        #print(newCentroids)
+		newCentroids=[]
+		for c in centroids:
+			if not borderPoint(im,c):newCentroids.append(c)
+		#print(" listFromBinary, refined  "+str(len(newCentroids)))
+		#print(newCentroids)
 
-        return newCentroids[1:]
+		return newCentroids[1:]
 
 
 def getSquare(w_size, p, img):
@@ -108,29 +112,36 @@ def getSquare(w_size, p, img):
 
 
 def main(argv):
-
 	try:
-		treetops_mask_file = argv[1]
-		mosaic_file = argv[2]
-		output_path = argv[3]
+		# verbose = False
+		patchSize, csvFileName, mosaicDict = interpretParameters(argv[1])
 
-		treetops_mask = cv2.imread(treetops_mask_file, cv2.IMREAD_GRAYSCALE)
-		mosaic = cv2.imread(mosaic_file, cv2.IMREAD_COLOR)
+		#if verbose: print(mosaicDict)
+		for mosaicName, mosaicInfo in mosaicDict.items():
 
-		centroids = listFromBinary(treetops_mask_file)
-		i = 1
+			mosaicTopsFile = mosaicInfo.path + mosaicInfo.mosaicTopsFile
+			mosaicFile = mosaicInfo.path + mosaicInfo.mosaicFile
+			outputFolder = mosaicInfo.path + mosaicInfo.outputFolder + "/"
 
-		for cent in centroids:
+			# if verbose: print("\n\nstarting processing of first mosaic and layers "+str(v)+"\n\n")
+			treetops_mask = cv2.imread(mosaicTopsFile, cv2.IMREAD_GRAYSCALE)
 
-			try:
-				# opencv works with inverted coords, so we have to invert ours.
-				square = getSquare(100, (cent[1],cent[0]), mosaic)
+			mosaic = cv2.imread(mosaicFile, cv2.IMREAD_COLOR)
 
-				cv2.imwrite(output_path+"patch"+str(i)+".jpg", square)
-				i=i+1
+			centroids = listFromBinary(mosaicTopsFile)
+			i = 1
 
-			except AssertionError as error:
-				print(error)
+			for cent in centroids:
+
+				try:
+					# opencv works with inverted coords, so we have to invert ours.
+					square = getSquare(patchSize, (cent[1],cent[0]), mosaic)
+
+					cv2.imwrite(outputFolder+"patch"+str(i)+".jpg", square)
+					i=i+1
+
+				except AssertionError as error:
+					print(error)
 
 
 	except AssertionError as error:
@@ -138,7 +149,7 @@ def main(argv):
 		print(error)
 
 
-# Exectuion example -> python treeDetection.py <path_to_top_mosaic> <path_to_mosaic> <output_folder>
+# Exectuion example -> python treeTopPatcher.py <path_to_params_file>
 
 if __name__ == "__main__":
-    main(sys.argv)
+	main(sys.argv)

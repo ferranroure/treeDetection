@@ -6,6 +6,7 @@ import sys
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from imagePatcherAnnotator import interpretParameters
 
 
 def borderPoint(image,point):

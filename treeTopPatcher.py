@@ -110,6 +110,9 @@ def getSquare(w_size, p, img):
 
 	return img[int(p[0])-w_size//2:int(p[0])+w_size//2, int(p[1])-w_size//2:int(p[1])+w_size//2]
 
+def isInLayer(center,layer):
+	return layer[int(center[0]),int(center[1])]==255
+
 
 def main(argv):
 	try:
@@ -129,16 +132,28 @@ def main(argv):
 			mosaic = cv2.imread(mosaicFile, cv2.IMREAD_COLOR)
 
 			centroids = listFromBinary(mosaicTopsFile)
-			i = 1
+			counter = 0
+
+			layers=[255-cv2.imread(layerFileName, cv2.IMREAD_GRAYSCALE) for layerFileName in mosaicInfo.layerFileList]
 
 			for cent in centroids:
 
 				try:
 					# opencv works with inverted coords, so we have to invert ours.
 					square = getSquare(patchSize, (cent[1],cent[0]), mosaic)
+					className="EMPTYCLASS"
+					for i in range(mosaicInfo.numClasses):
+						#print(str((cent[1],cent[0]))+" TO BE CHECKED FOR CLASS "+mosaicInfo.layerNameList[i])
 
-					cv2.imwrite(outputFolder+"patch"+str(i)+".jpg", square)
-					i=i+1
+						if isInLayer((cent[1],cent[0]),layers[i]):
+							if className!="EMPTYCLASS":raise Exception(str((cent[1],cent[0]))+"center belongs to two classes")
+							#print("found that "+str((cent[1],cent[0]))+" belongs to "+mosaicInfo.layerNameList[i])
+							className=mosaicInfo.layerNameList[i]
+
+					#if className=="EMPTYCLASS":raise Exception(str((cent[1],cent[0]))+"center belongs to no class")
+
+					cv2.imwrite(outputFolder+"SP"+className+"PATCH"+str(counter)+".jpg", square)
+					counter+=1
 
 				except AssertionError as error:
 					print(error)

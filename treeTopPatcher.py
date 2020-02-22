@@ -30,9 +30,6 @@ def interpretParameters(paramFile,verbose=False):
 		elif first=="patchSize":
 			patchSize=int(lineList[1].strip())
 			if verbose:print("Read Patch Size : "+str(patchSize))
-		elif first=="csvFileName":
-			csvFileN=lineList[1].strip()
-			if verbose:print("Read csv file name : "+csvFileN)
 		elif first=="mosaic":
 			# read the number of layers and set up reading loop
 			filePath=lineList[1]
@@ -62,7 +59,7 @@ def interpretParameters(paramFile,verbose=False):
 
 		if verbose:(print(mosaicDict))
 
-	return patchSize,csvFileN,mosaicDict
+	return patchSize,mosaicDict
 
 
 def borderPoint(image,point):
@@ -117,7 +114,7 @@ def isInLayer(center,layer):
 def main(argv):
 	try:
 		# verbose = False
-		patchSize, csvFileName, mosaicDict = interpretParameters(argv[1])
+		patchSize, mosaicDict = interpretParameters(argv[1])
 
 		#if verbose: print(mosaicDict)
 		for mosaicName, mosaicInfo in mosaicDict.items():
@@ -146,13 +143,16 @@ def main(argv):
 						#print(str((cent[1],cent[0]))+" TO BE CHECKED FOR CLASS "+mosaicInfo.layerNameList[i])
 
 						if isInLayer((cent[1],cent[0]),layers[i]):
-							if className!="EMPTYCLASS":raise Exception(str((cent[1],cent[0]))+"center belongs to two classes")
+							if className!="EMPTYCLASS":
+								raise Exception(str((cent[1],cent[0]))+"center belongs to two classes,  "+className+" and "+mosaicInfo.layerNameList[i])
 							#print("found that "+str((cent[1],cent[0]))+" belongs to "+mosaicInfo.layerNameList[i])
 							className=mosaicInfo.layerNameList[i]
 
-					#if className=="EMPTYCLASS":raise Exception(str((cent[1],cent[0]))+"center belongs to no class")
-
-					cv2.imwrite(outputFolder+"SP"+className+"PATCH"+str(counter)+".jpg", square)
+					if className=="EMPTYCLASS":
+						#raise Exception(str((cent[1],cent[0]))+"center belongs to no class")
+						print(str((cent[1],cent[0]))+"center belongs to no class")
+					else:
+						cv2.imwrite(outputFolder+"SP"+className+"PATCH"+str(counter)+".jpg", square)
 					counter+=1
 
 				except AssertionError as error:

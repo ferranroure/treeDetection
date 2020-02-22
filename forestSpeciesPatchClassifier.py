@@ -28,6 +28,11 @@ def main(argv):
     # Argv[3] Define architecture, tested resnet and vgg, there are more
     if argv[3]=="res": arch=models.resnet50
     elif argv[3]=="vgg":arch=models.vgg16_bn
+    elif argv[3]=="squ":arch=models.squeezenet1_0
+    elif argv[3]=="dense":arch=models.densenet121
+    elif argv[3]=="alex":arch=models.alexnet
+    elif argv[3]=="wRes":arch=models.wrn_22
+
     else: raise Exception("fastai Wasan, unrecognised architecture")
     # many more models are possible
     #https://docs.fast.ai/vision.models.html
@@ -45,6 +50,7 @@ def main(argv):
         numEpochs=int(argv[5])
         lr=float(argv[6])
         offset=2
+        print("TESTING ARCHITECTURE "+argv[3]+" with learning rate "+str(lr))
     if predict:
         #the following parameter (either 5 or 7 depending on whether training is True)
         # contains a file with a list of the names of the images to predict
@@ -72,6 +78,19 @@ def main(argv):
     if training:
         learn.fit_one_cycle(numEpochs, slice(lr))
         learn.save(modelFileName)
+        interp = ClassificationInterpretation.from_learner(learn)
+        conf=interp.confusion_matrix()
+        print(conf)
+        #valid=data.valid_ds.x.items[:]
+        #print("validation data "+str(valid))
+        # Make confusion matrix out of these!!!!
+#        for x in valid:
+#            aux=x.split("/")[-1].split(".")[0]
+            # now copy the correct labels on to the validation dictionary
+#            self.validFileDict[aux]=self.fileDict[aux]
+            #print(self.validFileDict[aux])
+
+
     else: # Not training, load model
         learn.load(modelFileName)
 

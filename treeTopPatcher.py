@@ -14,8 +14,6 @@ def interpretParameters(paramFile,verbose=False):
 	# read the parameter file line by line
 	f = open(paramFile, "r")
 	patchSize=-1
-	layerNameList=[]
-	layerFileList=[]
 	mosaicDict={}
 
 	for x in f:
@@ -31,6 +29,9 @@ def interpretParameters(paramFile,verbose=False):
 			patchSize=int(lineList[1].strip())
 			if verbose:print("Read Patch Size : "+str(patchSize))
 		elif first=="mosaic":
+			layerNameList=[]
+			layerFileList=[]
+
 			# read the number of layers and set up reading loop
 			filePath=lineList[1]
 			mosaic=lineList[2]

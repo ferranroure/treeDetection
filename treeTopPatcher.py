@@ -10,6 +10,11 @@ from collections import namedtuple
 
 mosaicInfo = namedtuple("mosaicInfo","path mosaicFile mosaicTopsFile numClasses layerNameList layerFileList outputFolder " )
 
+def show_img(img):
+	cv2.imshow('image',img)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
 def interpretParameters(paramFile,verbose=False):
 	# read the parameter file line by line
 	f = open(paramFile, "r")
@@ -124,15 +129,19 @@ def main(argv):
 			mosaicFile = mosaicInfo.path + mosaicInfo.mosaicFile
 			outputFolder = mosaicInfo.path + mosaicInfo.outputFolder + "/"
 
+			# print(mosaicTopsFile)
 			# if verbose: print("\n\nstarting processing of first mosaic and layers "+str(v)+"\n\n")
 			treetops_mask = cv2.imread(mosaicTopsFile, cv2.IMREAD_GRAYSCALE)
+			# show_img(treetops_mask)
 
 			mosaic = cv2.imread(mosaicFile, cv2.IMREAD_COLOR)
 
 			centroids = listFromBinary(mosaicTopsFile)
 			counter = 0
 
-			layers=[255-cv2.imread(layerFileName, cv2.IMREAD_GRAYSCALE) for layerFileName in mosaicInfo.layerFileList]
+			# layers=[255-cv2.imread(layerFileName, cv2.IMREAD_GRAYSCALE) for layerFileName in mosaicInfo.layerFileList]
+			layers=[cv2.bitwise_not(cv2.imread(layerFileName, cv2.IMREAD_GRAYSCALE)) for layerFileName in mosaicInfo.layerFileList]
+			print(mosaicInfo.layerFileList[0])
 
 			for cent in centroids:
 

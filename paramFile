@@ -3,6 +3,6 @@
 patchSize 100
 
 # for each mosaic to be considered, include folder prefix, mosaic file name, number of layers and  as well as file names finaly, also include output folder name
-mosaic /home/ferranroure/workspaces/deeptree/treeDetection/data/ mosaic0.jpg mosaic0top.jpg 3 oak mosaic0_oak.jpg holm mosaic0_holm.jpg pine mosaic0_pine.jpg patches
+mosaic /home/ferranroure/workspaces/deeptree/treeDetection/data/forest/ mosaic0.jpg mosaic0top.jpg 3 oak mosaic0_oak.jpg holm mosaic0_holm.jpg pine mosaic0_pine.jpg patches2
 
-csvFileName //media/yago/workDrive/Experiments/forests/segmentation/CF1/coastalForest.csv
+#csvFileName //media/yago/workDrive/Experiments/forests/segmentation/CF1/coastalForest.csv

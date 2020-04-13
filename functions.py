@@ -5,6 +5,43 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import namedtuple
 
+from fastai.vision import open_image
+
+
+def sliding_windowMosaicMask(image,mask, stepSize, windowSize):
+    # slide a window across the image
+    for y in range(0, image.shape[0], stepSize):
+        for x in range(0, image.shape[1], stepSize):
+            # yield the current window
+            yield (x, y, image[y:y + windowSize[1], x:x + windowSize[0]],mask[y:y + windowSize[1], x:x + windowSize[0]])
+
+# receive an image, a patch size and a step, a classifier and a label name,
+# create a mask of all the patches that belong to the label according to the classifier
+def classifyPatches(mosaic,step,patchSize,classifierPatchSize,learner=None,label=""):
+    # create empty output mask
+    # create a mask of ones to be added each time a patch is found to contain the label
+    outputMask = np.zeros((mosaic.shape[0],mosaic.shape[1]), dtype = "uint8")
+
+    for (x, y, mosaicW,maskW) in sliding_windowMosaicMask(mosaic, outputMask, stepSize=step, windowSize=(patchSize, patchSize)):
+
+        # create a mask of ones to be added each time a patch is found to contain the label
+        maskOfOnes = 1*np.ones((maskW.shape[0],maskW.shape[1]), dtype = "uint8")
+
+        # Can we do the following shit in a less ugly way???? (no, learner.predict(mosaicW) does not work)
+        tempImage = cv2.resize(mosaicW,(classifierPatchSize,classifierPatchSize))
+        cv2.imwrite("./tempImage.jpg",tempImage)
+        img=open_image("./tempImage.jpg")
+        pred_class,pred_idx,outputs =learner.predict(img)
+        if label in str(pred_class).split(";"): maskW=np.add(maskW,maskOfOnes)
+
+    # At the end of the loop, we have added ones every time a patch has been classified as belonging to the class
+    oMaskMax=np.max(ouputMask)
+    heatMapPerc=0.5
+    ouputMask[ouputMask<int(oMaskMax*heatMapPerc)]=0
+    ouputMask[ouputMask!=0]=255
+    print("output mask max!! "+str(oMaskMax))
+    return outputMask
+
 def show_img(img):
 	cv2.imshow('image',img)
 	cv2.waitKey(0)

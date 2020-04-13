@@ -3,6 +3,6 @@
 patchSize 100
 
 # for each mosaic to be considered, include folder prefix, mosaic file name, number of layers and  as well as file names finaly, also include output folder name
-mosaic /media/yago/workDrive/Experiments//treeDetection/data/ Z2_1_240819_Mosaic.jpg Z2_1_240819_treetop.jpg 4 deadFir Z2_1_240819_DeadFir.jpg sickFir Z2_1_240819_SickFir.jpg healthyFir Z2_1_240819_HealthyFir.jpg deciduous Z2_1_240819_Decidious.jpg patches
+mosaic /media/yago/workDrive/Experiments//treeDetection/CargolPoma/ DSC07109.jpg 3 cargol_poma DSC07109_mask.jpg water DSC07109_water.jpg ground DSC07109_ground.jpg patches
 
 

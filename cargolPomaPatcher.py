@@ -79,7 +79,7 @@ def main(argv):
 			mosaic = cv2.imread(mosaicFile, cv2.IMREAD_COLOR)
 
 
-			for layerFileName in mosaicInfo.layerFileList: # FOR EACH CLASS 
+			for layerFileName in mosaicInfo.layerFileList: # FOR EACH CLASS
 
 				centroids = listFromBinary(layerFileName)
 				counter = 0
@@ -114,6 +114,11 @@ def main(argv):
 
 	except AssertionError as error:
 		print(error)
+
+	# once this is finished, we should consider using the data augmenter to create more images.
+	# for example, loop over all images, and generate a fixed number of augmented images per image
+	# (loop over all generated patches), for each patch call "augment" with different code, store all images
+	# check function processCSVFile in multiLabelDataAugmenter for details on hot to call augment and store the resulting images
 
 
 # Exectuion example -> python treeTopPatcher.py <path_to_params_file>

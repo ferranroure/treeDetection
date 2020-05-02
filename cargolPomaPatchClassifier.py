@@ -5,7 +5,7 @@ import numpy as np
 import sys
 from fastai import *
 from fastai.vision import *
-import function as func
+from functions import *
 
 
 def setRandomSeed(seed_value, use_cuda=True):
@@ -67,7 +67,7 @@ def main(argv):
         # contains a file with an image to be traversed to predict where the apple snail is
         predictFileName=argv[5+offset]
 
-    bs=64 # size of batch, if you run out of memory switch to 16 (slower)
+    bs=32 # size of batch, if you run out of memory switch to 16 (slower)
 
     # Get data file names, each image name will be extracted with REGULAR expressions
     fnames = get_image_files(PATH)
@@ -90,7 +90,7 @@ def main(argv):
 
     if training:
         learn.fit_one_cycle(numEpochs, slice(lr))
-        learn.save(modelFileName)
+        learn.save(modelFileName, return_path=True)
         interp = ClassificationInterpretation.from_learner(learn)
         conf=interp.confusion_matrix()
         print(conf)
@@ -106,13 +106,13 @@ def main(argv):
     else: # Not training, load model
         learn.load(modelFileName)
 
-    #now   predictFileName is a "mosaic where we will call function "classifyPatches", should be something along the lines of
-    # these parameters should not be entered by code
-    patchSize=50
-    step=50 # this should be <= patchSize, if ==, non-overlapping patches
-    classifierPatchSize=100
+        #now   predictFileName is a "mosaic where we will call function "classifyPatches", should be something along the lines of
+        # these parameters should not be entered by code
+        patchSize=50
+        step=50 # this should be <= patchSize, if ==, non-overlapping patches
+        classifierPatchSize=100
 
-    classifyPatches(modelFileName,step,patchSize,classifierPatchSize,learner=learn,label="")
+        classifyPatches(predictFileName,step,patchSize,classifierPatchSize,learner=learn,label="")
 
 #    print("model trained or loaded, now compute predictions? "+str(predict))
 #    if(predict):

@@ -2,5 +2,5 @@
 #patchsize 
 patchSize 100
 
-# for each mosaic to be considered, include folder prefix, mosaic file name, number of layers and  as well as file names finaly, also include output folder name
-mosaic /home/ferranroure/workspaces/deeptree/treeDetection/data/cargol_poma/ DSC07109.jpg 3 cargol_poma DSC07109_mask.jpg water DSC07109_water.jpg ground DSC07109_ground.jpg patches
+# 
+images /home/ferranroure/workspace/cargolpoma/treeDetection/data/cargol_poma/ images/ masks/ patches/ 3 cargolpoma water ground 

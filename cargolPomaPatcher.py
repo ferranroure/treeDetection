@@ -1,5 +1,5 @@
 # This method takes the point coordinates of each tree top given by crownSegementerEvaluator and extracts
-# a squared patch arround each one. Then, uses the classified masks of the mosaics to know in which species belongs.
+# a squared patch arround each one. Then, uses the classified masks of the images to know in which species belongs.
 # Then stores each small labeled patch in a folder.
 
 import sys
@@ -7,52 +7,57 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import namedtuple
+from pathlib import Path
 from functions import *
+import os
 
-mosaicInfo = namedtuple("mosaicInfo","path mosaicFile numClasses layerNameList layerFileList outputFolder " )
+folderInfo = namedtuple("folderInfo","mainPath imageFolder maskFolder outputFolder numClasses layerNameList" )
+_ext = ".jpg"
 
 
 
 def interpretParameters(paramFile,verbose=False):
 	# read the parameter file line by line
 	f = open(paramFile, "r")
-	patchSize=-1
-	mosaicDict={}
+	patchSize = -1
+	imageDict = {}
+	layerNameList = []
+
 
 	for x in f:
-		lineList=x.split(" ")
+		lineList = x.split(" ")
 		# read every line
-		first=lineList[0]
+		first = lineList[0]
 
-		if first[0]=="#": #if the first character is # treat as a comment
+		if first[0] == "#": #if the first character is # treat as a comment
 			if verbose:print("COMMENT: "+str(lineList))
-		elif first=="\n":# account for blank lines, do nothing
+		elif first == "\n":# account for blank lines, do nothing
 			pass
-		elif first=="patchSize":
-			patchSize=int(lineList[1].strip())
+		elif first == "patchSize":
+			patchSize = int(lineList[1].strip())
 			if verbose:print("Read Patch Size : "+str(patchSize))
-		elif first=="mosaic":
-			layerNameList=[]
-			layerFileList=[]
+		elif first == "images":
 
 			# read the number of layers and set up reading loop
-			filePath=lineList[1]
-			mosaic=lineList[2]
-			numClasses=int(lineList[3])
-			outputFolder=lineList[4+numClasses*2].strip()
-			for i in range(4,numClasses*2+3,2):
-				layerNameList.append(lineList[i])
-				layerFileList.append(filePath+lineList[i+1])
+			mainPath = lineList[1]
+			imageFolder = lineList[2]
+			maskFolder = lineList[3]
+			outputFolder = lineList[4]
+			numClasses = int(lineList[5].strip())
+			for i in range(numClasses):
+				layerNameList.append(lineList[6+i])
+	
 
-			#make dictionary entry for this mosaic
-			mosaicDict[mosaic]=mosaicInfo(filePath,mosaic,numClasses,layerNameList,layerFileList,outputFolder)
+			#make dictionary entry for this path
+			imageDict[imageFolder] = folderInfo(mainPath, imageFolder, maskFolder, outputFolder, numClasses, layerNameList)
+
 			if verbose:
 				print("\n\n\n")
-				print(mosaicDict[mosaic])
-				print("\n\n\n")
+				# print(imageDict[image])
+				# print("\n\n\n")
 				#print("Read layers and file : ")
 				#print("filePath "+filePath)
-				#print("mosaic "+mosaic)
+				#print("image "+image)
 				#print("num Classes "+str(numClasses))
 				#print("layerName List "+str(layerNameList))
 				#print("layer List "+str(layerList))
@@ -60,56 +65,58 @@ def interpretParameters(paramFile,verbose=False):
 		else:
 			raise Exception("ImagePatchAnnotator:interpretParameters, reading parameters, received wrong parameter "+str(lineList))
 
-		if verbose:(print(mosaicDict))
+		if verbose:(print(imageDict))
 
-	return patchSize,mosaicDict
+	return patchSize,imageDict
 
 
 
 def main(argv):
 	try:
 		# verbose = False
-		patchSize, mosaicDict = interpretParameters(argv[1])
-
-		#if verbose: print(mosaicDict)
-		for mosaicName, mosaicInfo in mosaicDict.items(): # FOR EACH MOSAIC
-
-			mosaicFile = mosaicInfo.path + mosaicInfo.mosaicFile
-			outputFolder = mosaicInfo.path + mosaicInfo.outputFolder + "/"
-			mosaic = cv2.imread(mosaicFile, cv2.IMREAD_COLOR)
+		patchSize, imageDict = interpretParameters(argv[1])
 
 
-			for layerFileName in mosaicInfo.layerFileList: # FOR EACH CLASS
+		# #if verbose: print(imageDict)
+		for name, info in imageDict.items(): # FOR EACH folder
 
-				centroids = listFromBinary(layerFileName)
-				counter = 0
+			imageFolder = info.mainPath + info.imageFolder
+			maskFolder = info.mainPath + info.maskFolder
+			outputFolder = info.mainPath + info.outputFolder
 
-				layers=[cv2.bitwise_not(cv2.imread(layerFileName, cv2.IMREAD_GRAYSCALE)) for layerFileName in mosaicInfo.layerFileList]
+			# reading image forder
+			for file in os.listdir(imageFolder):
+				if not file.endswith(_ext):
+					print("Unknown file format")
+					continue
+					
+				image = cv2.imread(file, cv2.IMREAD_COLOR)
+				imageName = os.path.splitext(file)[0]
 
-				for cent in centroids: # FOR EACH ELEMENT
 
-					try:
-						# opencv works with inverted coords, so we have to invert ours.
-						square = getSquare(patchSize, (cent[1],cent[0]), mosaic)
-						className="EMPTYCLASS"
-						for i in range(mosaicInfo.numClasses):
-							#print(str((cent[1],cent[0]))+" TO BE CHECKED FOR CLASS "+mosaicInfo.layerNameList[i])
+				for layerName in info.layerNameList: # FOR EACH CLASS
 
-							if isInLayer((cent[1],cent[0]),layers[i]):
-								if className!="EMPTYCLASS":
-									raise Exception(str((cent[1],cent[0]))+"center belongs to two classes,  "+className+" and "+mosaicInfo.layerNameList[i])
-								#print("found that "+str((cent[1],cent[0]))+" belongs to "+mosaicInfo.layerNameList[i])
-								className=mosaicInfo.layerNameList[i]
+					layerFilePath = maskFolder + imageName + "_" + layerName + _ext
 
-						if className=="EMPTYCLASS":
-							#raise Exception(str((cent[1],cent[0]))+"center belongs to no class")
-							print(str((cent[1],cent[0]))+"center belongs to no class")
-						else:
-							cv2.imwrite(outputFolder+"SP"+className+"PATCH"+str(counter)+".jpg", square)
-						counter+=1
+					my_file = Path(layerFilePath)
+					if not my_file.is_file():
+						print("There is no mask of class " + layerName + " for image " + imageName)
+						continue
 
-					except AssertionError as error:
-						print(error)
+					centroids = listFromBinary(layerFilePath)
+					counter = 0
+
+					# layer = cv2.bitwise_not(cv2.imread(layerFilePath, cv2.IMREAD_GRAYSCALE))
+
+					for cent in centroids: # FOR EACH ELEMENT
+						try:
+							# opencv works with inverted coords, so we have to invert ours.
+							square = getSquare(patchSize, (cent[1],cent[0]), image)
+							cv2.imwrite(outputFolder + className + "PATCH" + str(counter) + _ext, square)
+							counter+=1							
+
+						except AssertionError as error:
+							print(error)
 
 
 	except AssertionError as error:

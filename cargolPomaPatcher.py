@@ -90,7 +90,7 @@ def main(argv):
 					print("Unknown file format")
 					continue
 					
-				image = cv2.imread(file, cv2.IMREAD_COLOR)
+				image = cv2.imread(imageFolder + file, cv2.IMREAD_COLOR)
 				imageName = os.path.splitext(file)[0]
 
 
@@ -100,7 +100,7 @@ def main(argv):
 
 					my_file = Path(layerFilePath)
 					if not my_file.is_file():
-						print("There is no mask of class " + layerName + " for image " + imageName)
+						print("There is no mask of class [" + layerName + "] for image " + imageName)
 						continue
 
 					centroids = listFromBinary(layerFilePath)
@@ -112,7 +112,7 @@ def main(argv):
 						try:
 							# opencv works with inverted coords, so we have to invert ours.
 							square = getSquare(patchSize, (cent[1],cent[0]), image)
-							cv2.imwrite(outputFolder + className + "PATCH" + str(counter) + _ext, square)
+							cv2.imwrite(outputFolder + layerName + "PATCH" + str(counter) + _ext, square)
 							counter+=1							
 
 						except AssertionError as error:
